@@ -35,35 +35,12 @@ export default function App() {
   });
 
   // Entities State
-  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
-    const saved = localStorage.getItem('transitops_vehicles');
-    return saved ? JSON.parse(saved) : INITIAL_VEHICLES;
-  });
-
-  const [drivers, setDrivers] = useState<Driver[]>(() => {
-    const saved = localStorage.getItem('transitops_drivers');
-    return saved ? JSON.parse(saved) : INITIAL_DRIVERS;
-  });
-
-  const [trips, setTrips] = useState<Trip[]>(() => {
-    const saved = localStorage.getItem('transitops_trips');
-    return saved ? JSON.parse(saved) : INITIAL_TRIPS;
-  });
-
-  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>(() => {
-    const saved = localStorage.getItem('transitops_maint_logs');
-    return saved ? JSON.parse(saved) : INITIAL_MAINTENANCE_LOGS;
-  });
-
-  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>(() => {
-    const saved = localStorage.getItem('transitops_fuel_logs');
-    return saved ? JSON.parse(saved) : INITIAL_FUEL_LOGS;
-  });
-
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('transitops_expenses');
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
-  });
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
+  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // Navigation / UI states
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
@@ -73,35 +50,33 @@ export default function App() {
     return (saved === 'dark' || saved === 'light') ? saved : 'light';
   });
 
-  // Sync to LocalStorage
+  // Sync theme Mode to LocalStorage
   useEffect(() => {
     localStorage.setItem('transitops_theme', themeMode);
   }, [themeMode]);
 
-  useEffect(() => {
-    localStorage.setItem('transitops_vehicles', JSON.stringify(vehicles));
-  }, [vehicles]);
+  // Sync database helper
+  const syncDatabase = () => {
+    fetch('/api/data')
+      .then((res) => {
+        if (!res.ok) throw new Error('API Sync failed');
+        return res.json();
+      })
+      .then((data) => {
+        setVehicles(data.vehicles || []);
+        setDrivers(data.drivers || []);
+        setTrips(data.trips || []);
+        setMaintenanceLogs(data.maintenanceLogs || []);
+        setFuelLogs(data.fuelLogs || []);
+        setExpenses(data.expenses || []);
+      })
+      .catch((err) => console.error('Sync error:', err));
+  };
 
+  // Sync initial dataset on mount
   useEffect(() => {
-    localStorage.setItem('transitops_drivers', JSON.stringify(drivers));
-  }, [drivers]);
-
-  useEffect(() => {
-    localStorage.setItem('transitops_trips', JSON.stringify(trips));
-  }, [trips]);
-
-  useEffect(() => {
-    localStorage.setItem('transitops_maint_logs', JSON.stringify(maintenanceLogs));
-  }, [maintenanceLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('transitops_fuel_logs', JSON.stringify(fuelLogs));
-  }, [fuelLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('transitops_expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
+    syncDatabase();
+  }, []);
 
   // Auth Handlers
   const handleLogin = (user: User) => {
@@ -153,24 +128,22 @@ export default function App() {
 
   // --- VEHICLE HANDLERS ---
   const handleAddVehicle = (newVeh: Omit<Vehicle, 'id' | 'documents'>): boolean | string => {
-    // Check registration unique check
     const duplicate = vehicles.some(v => v.registrationNumber.toUpperCase() === newVeh.registrationNumber.toUpperCase());
     if (duplicate) {
       return `Registration number ${newVeh.registrationNumber} already exists in the registry. Unique identifier is required.`;
     }
 
-    const created: Vehicle = {
-      ...newVeh,
-      id: 'v-' + Date.now(),
-      documents: []
-    };
-
-    setVehicles(prev => [...prev, created]);
+    fetch('/api/vehicles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newVeh)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
     return true;
   };
 
   const handleUpdateVehicle = (updatedVeh: Vehicle): boolean | string => {
-    // Check registration unique check against OTHER vehicles
     const duplicate = vehicles.some(v => 
       v.id !== updatedVeh.id && 
       v.registrationNumber.toUpperCase() === updatedVeh.registrationNumber.toUpperCase()
@@ -179,84 +152,72 @@ export default function App() {
       return `Registration number ${updatedVeh.registrationNumber} is already allocated to another vehicle asset.`;
     }
 
-    setVehicles(prev => prev.map(v => v.id === updatedVeh.id ? updatedVeh : v));
+    fetch(`/api/vehicles/${updatedVeh.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedVeh)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
     return true;
   };
 
   const handleDeleteVehicle = (id: string) => {
-    setVehicles(prev => prev.filter(v => v.id !== id));
+    fetch(`/api/vehicles/${id}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   const handleAddDocument = (vehicleId: string, doc: Omit<VehicleDocument, 'id'>) => {
-    const created: VehicleDocument = {
-      ...doc,
-      id: 'doc-' + Date.now()
-    };
-
-    setVehicles(prev => prev.map(v => {
-      if (v.id === vehicleId) {
-        return {
-          ...v,
-          documents: [...v.documents, created]
-        };
-      }
-      return v;
-    }));
+    fetch(`/api/vehicles/${vehicleId}/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doc)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
   };
 
   const handleDeleteDocument = (vehicleId: string, docId: string) => {
-    setVehicles(prev => prev.map(v => {
-      if (v.id === vehicleId) {
-        return {
-          ...v,
-          documents: v.documents.filter(d => d.id !== docId)
-        };
-      }
-      return v;
-    }));
+    fetch(`/api/vehicles/${vehicleId}/documents/${docId}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   // --- DRIVER HANDLERS ---
   const handleAddDriver = (newDri: Omit<Driver, 'id'>) => {
-    const created: Driver = {
-      ...newDri,
-      id: 'd-' + Date.now()
-    };
-    setDrivers(prev => [...prev, created]);
+    fetch('/api/drivers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newDri)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
   };
 
   const handleUpdateDriver = (updatedDri: Driver) => {
-    setDrivers(prev => prev.map(d => d.id === updatedDri.id ? updatedDri : d));
+    fetch(`/api/drivers/${updatedDri.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedDri)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
   };
 
   const handleDeleteDriver = (id: string) => {
-    setDrivers(prev => prev.filter(d => d.id !== id));
+    fetch(`/api/drivers/${id}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   // --- TRIP HANDLERS ---
   const handleAddTrip = (newTrip: Omit<Trip, 'id'>): boolean | string => {
-    // State logic layer validations to enforce business rules
     const vehicle = vehicles.find(v => v.id === newTrip.vehicleId);
-    if (!vehicle) {
-      return 'Vehicle not found in corporate registry.';
-    }
-
+    if (!vehicle) return 'Vehicle not found in corporate registry.';
     const driver = drivers.find(d => d.id === newTrip.driverId);
-    if (!driver) {
-      return 'Driver not found in corporate registry.';
-    }
+    if (!driver) return 'Driver not found in corporate registry.';
 
-    // 1. Cargo Weight <= Vehicle Maximum Load Capacity
     if (newTrip.cargoWeight > vehicle.maxLoadCapacity) {
       return `Cargo weight (${newTrip.cargoWeight} kg) exceeds vehicle max capacity of ${vehicle.maxLoadCapacity} kg.`;
     }
-
-    // 2. Retired or In Shop vehicles never appear in dispatch selection
     if (vehicle.status === 'Retired' || vehicle.status === 'In Shop') {
       return `Vehicle status is ${vehicle.status} and cannot be assigned to a trip.`;
     }
-
-    // 3. Drivers with expired license or Suspended status cannot be assigned to trips
     const today = new Date();
     const expiry = new Date(driver.licenseExpiryDate);
     if (expiry.getTime() < today.getTime()) {
@@ -265,8 +226,6 @@ export default function App() {
     if (driver.status === 'Suspended') {
       return `Driver ${driver.name} is currently Suspended. Operation blocked.`;
     }
-
-    // 4. A driver or vehicle already On Trip cannot be assigned to another trip
     if (vehicle.status === 'On Trip') {
       return `Vehicle ${vehicle.registrationNumber} is already on an active trip.`;
     }
@@ -274,184 +233,91 @@ export default function App() {
       return `Driver ${driver.name} is already on an active trip.`;
     }
 
-    const created: Trip = {
-      ...newTrip,
-      id: 't-' + Date.now()
-    };
-    setTrips(prev => [...prev, created]);
+    fetch('/api/trips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTrip)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
     return true;
   };
 
-  // Dispatched Side Effects
   const handleDispatchTrip = (tripId: string) => {
-    const tripToDispatch = trips.find(t => t.id === tripId);
-    if (!tripToDispatch) return;
-
-    // Trigger state transitions
-    setTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: 'Dispatched' } : t));
-    
-    // Set vehicle status = On Trip
-    setVehicles(prev => prev.map(v => v.id === tripToDispatch.vehicleId ? { ...v, status: 'On Trip' } : v));
-    
-    // Set driver status = On Trip
-    setDrivers(prev => prev.map(d => d.id === tripToDispatch.driverId ? { ...d, status: 'On Trip' } : d));
+    fetch(`/api/trips/${tripId}/dispatch`, { method: 'PUT' }).then(() => syncDatabase());
   };
 
-  // Completion Side Effects
   const handleCompleteTrip = (tripId: string, finalOdometer: number, fuelConsumed: number): boolean | string => {
-    const tripToComplete = trips.find(t => t.id === tripId);
-    if (!tripToComplete) return 'Trip not found.';
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return 'Trip not found.';
+    if (finalOdometer < trip.odometerStart) {
+      return `Final odometer (${finalOdometer} km) cannot be lower than the starting odometer (${trip.odometerStart} km).`;
+    }
 
-    // Update Trip record
-    setTrips(prev => prev.map(t => t.id === tripId ? { 
-      ...t, 
-      status: 'Completed',
-      odometerEnd: finalOdometer,
-      fuelConsumed: fuelConsumed
-    } : t));
-
-    // Update Vehicle (status = Available, odometer updated)
-    setVehicles(prev => prev.map(v => v.id === tripToComplete.vehicleId ? { 
-      ...v, 
-      status: 'Available',
-      odometer: finalOdometer
-    } : v));
-
-    // Update Driver (status = Available)
-    setDrivers(prev => prev.map(d => d.id === tripToComplete.driverId ? { ...d, status: 'Available' } : d));
-
-    // Create automatic Fuel Log side effect
-    const newFuelLogCost = parseFloat((fuelConsumed * 1.45).toFixed(2)); // estimated price
-    const fuelDate = new Date().toISOString().split('T')[0];
-
-    const automaticFuelLog: FuelLog = {
-      id: 'f-auto-' + Date.now(),
-      vehicleId: tripToComplete.vehicleId,
-      liters: fuelConsumed,
-      cost: newFuelLogCost,
-      date: fuelDate,
-    };
-    setFuelLogs(prev => [...prev, automaticFuelLog]);
-
-    // Create automatic Fuel Expense side effect
-    const automaticFuelExpense: Expense = {
-      id: 'e-auto-f-' + Date.now(),
-      vehicleId: tripToComplete.vehicleId,
-      type: 'Fuel',
-      amount: newFuelLogCost,
-      date: fuelDate,
-      notes: `Refuel for Completed Mission #${tripId} (${tripToComplete.source} → ${tripToComplete.destination})`,
-    };
-    setExpenses(prev => [...prev, automaticFuelExpense]);
-
+    fetch(`/api/trips/${tripId}/complete`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finalOdometer, fuelConsumed })
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
     return true;
   };
 
-  // Cancel Side Effects
   const handleCancelTrip = (tripId: string) => {
-    const tripToCancel = trips.find(t => t.id === tripId);
-    if (!tripToCancel) return;
-
-    // Update Trip
-    setTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: 'Cancelled' } : t));
-
-    // Revert Vehicle to Available
-    setVehicles(prev => prev.map(v => v.id === tripToCancel.vehicleId ? { ...v, status: 'Available' } : v));
-
-    // Revert Driver to Available
-    setDrivers(prev => prev.map(d => d.id === tripToCancel.driverId ? { ...d, status: 'Available' } : d));
+    fetch(`/api/trips/${tripId}/cancel`, { method: 'PUT' }).then(() => syncDatabase());
   };
 
   const handleDeleteTrip = (tripId: string) => {
-    setTrips(prev => prev.filter(t => t.id !== tripId));
+    fetch(`/api/trips/${tripId}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   // --- MAINTENANCE HANDLERS ---
   const handleAddMaintenanceLog = (newLog: Omit<MaintenanceLog, 'id'>) => {
-    const logId = 'm-' + Date.now();
-    const created: MaintenanceLog = {
-      ...newLog,
-      id: logId
-    };
-
-    setMaintenanceLogs(prev => [...prev, created]);
-
-    // SIDE EFFECT: Active maintenance -> Vehicle status becomes 'In Shop'
-    if (newLog.status === 'Active') {
-      setVehicles(prev => prev.map(v => v.id === newLog.vehicleId ? { ...v, status: 'In Shop' } : v));
-    }
-
-    // Automatically book corresponding expense record of type 'Maintenance'
-    const newMaintExpense: Expense = {
-      id: 'e-auto-m-' + Date.now(),
-      vehicleId: newLog.vehicleId,
-      type: 'Maintenance',
-      amount: newLog.cost,
-      date: newLog.date,
-      notes: `${newLog.serviceType} Workshop Ticket (#${logId})`,
-    };
-    setExpenses(prev => [...prev, newMaintExpense]);
+    fetch('/api/maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLog)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
   };
 
   const handleCompleteMaintenanceLog = (logId: string) => {
-    const logToComplete = maintenanceLogs.find(m => m.id === logId);
-    if (!logToComplete) return;
-
-    // Set Log status to Completed
-    setMaintenanceLogs(prev => prev.map(m => m.id === logId ? { ...m, status: 'Completed' } : m));
-
-    // Set Vehicle back to Available (unless it was already Retired)
-    setVehicles(prev => prev.map(v => {
-      if (v.id === logToComplete.vehicleId) {
-        return {
-          ...v,
-          status: v.status === 'Retired' ? 'Retired' : 'Available'
-        };
-      }
-      return v;
-    }));
+    fetch(`/api/maintenance/${logId}/complete`, { method: 'PUT' }).then(() => syncDatabase());
   };
 
   const handleDeleteMaintenanceLog = (logId: string) => {
-    setMaintenanceLogs(prev => prev.filter(m => m.id !== logId));
+    fetch(`/api/maintenance/${logId}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   // --- GENERAL EXPENSES HANDLERS ---
   const handleAddFuelLog = (newFuel: Omit<FuelLog, 'id'>) => {
-    const fuelId = 'f-' + Date.now();
-    const created: FuelLog = {
-      ...newFuel,
-      id: fuelId
-    };
-
-    setFuelLogs(prev => [...prev, created]);
-
-    // Corresponding general expense registry
-    const correspondingExpense: Expense = {
-      id: 'e-auto-f-' + Date.now(),
-      vehicleId: newFuel.vehicleId,
-      type: 'Fuel',
-      amount: newFuel.cost,
-      date: newFuel.date,
-      notes: `Refuel diesel log (#${fuelId}) - ${newFuel.liters}L`,
-    };
-    setExpenses(prev => [...prev, correspondingExpense]);
+    fetch('/api/fuel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newFuel)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
   };
 
   const handleAddExpense = (newExp: Omit<Expense, 'id'>) => {
-    const created: Expense = {
-      ...newExp,
-      id: 'e-' + Date.now()
-    };
-    setExpenses(prev => [...prev, created]);
+    fetch('/api/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newExp)
+    }).then(res => {
+      if (res.ok) syncDatabase();
+    });
   };
 
   const handleDeleteFuelLog = (id: string) => {
-    setFuelLogs(prev => prev.filter(f => f.id !== id));
+    fetch(`/api/fuel/${id}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   const handleDeleteExpense = (id: string) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
+    fetch(`/api/expenses/${id}`, { method: 'DELETE' }).then(() => syncDatabase());
   };
 
   // If not logged in, force Login screen
