@@ -24,6 +24,11 @@ To bundle the project for production deployment:
 npm run build
 ```
 This generates optimized static files inside the `dist/` directory.
+TO RUN THE BACKEND SERVER
+
+        npx.cmd tsx server.ts
+RUN THIS COMMAND
+
 
 ---
 
