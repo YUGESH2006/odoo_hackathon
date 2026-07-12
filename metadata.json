@@ -1,0 +1,6 @@
+{
+  "name": "TransitOps",
+  "description": "Smart Transport Operations Platform for digitizing vehicle, driver, dispatch, maintenance, and expense management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

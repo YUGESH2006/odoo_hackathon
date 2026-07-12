@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------
+   TRANSITOPS PREMIUM DARK THEME SYSTEM
+   ------------------------------------------------------------- */
+
+/* Enable transitions for theme switching */
+div, header, aside, main, table, th, td, button, select, input, textarea {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* Dark mode specific selectors */
+.dark {
+  background-color: #0b1329 !important; /* deep space navy */
+  color: #f8fafc !important;
+}
+
+/* Outer layout and major containers */
+.dark #workspace-window {
+  background-color: #0b1329 !important;
+}
+
+.dark #workspace-header {
+  background-color: #0b1329 !important;
+  border-color: #1e293b !important;
+}
+
+.dark #workspace-header span.text-slate-800 {
+  color: #f8fafc !important;
+}
+
+/* Card and dashboard KPI components */
+.dark .bg-white {
+  background-color: #111c44 !important; /* dark card color */
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Text class overrides in dark mode */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: #94a3b8 !important; /* muted slate text */
+}
+
+.dark .text-slate-950 {
+  color: #f8fafc !important;
+}
+
+/* Border overlays */
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-slate-150 {
+  border-color: #1e293b !important;
+}
+
+/* Inputs, Selects, and Textareas */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #16223f !important;
+  border-color: #2c3a5e !important;
+  color: #f8fafc !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #3b82f6 !important;
+  outline: none;
+}
+
+.dark select option {
+  background-color: #111c44 !important;
+  color: #f8fafc !important;
+}
+
+.dark input::placeholder {
+  color: #64748b !important;
+}
+
+/* Tables and Ledger elements */
+.dark table {
+  color: #cbd5e1 !important;
+}
+
+.dark thead tr {
+  background-color: #16223f !important;
+  border-color: #1e293b !important;
+}
+
+.dark th {
+  background-color: #16223f !important;
+  color: #94a3b8 !important;
+  border-color: #1e293b !important;
+}
+
+.dark th:hover {
+  background-color: #1c2e55 !important;
+}
+
+.dark tbody tr {
+  border-color: #1e293b !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #16223f !important;
+}
+
+.dark td {
+  border-color: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/40 {
+  background-color: #16223f !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+/* UI details custom adjustments */
+.dark #sidebar-as {
+  background-color: #070d19 !important;
+  border-color: #111c44 !important;
+}
+
+.dark #sidebar-as .bg-slate-950\/40 {
+  background-color: #0b1329 !important;
+}
+
+.dark #sidebar-role-selector {
+  background-color: #16223f !important;
+  border-color: #2c3a5e !important;
+}
+
+.dark #sidebar-nav button:not(.bg-blue-600) {
+  color: #94a3b8 !important;
+}
+
+.dark #sidebar-nav button:not(.bg-blue-600):hover {
+  background-color: #16223f !important;
+  color: #ffffff !important;
+}
+
+.dark #logout-btn {
+  background-color: #16223f !important;
+}
+
+.dark #logout-btn:hover {
+  background-color: #2c3a5e !important;
+  color: #ffffff !important;
+}
+
+/* Modals & sliding drawers overlays */
+.dark .fixed.inset-0.z-50.bg-slate-900\/40 {
+  background-color: rgba(7, 13, 25, 0.6) !important;
+}
+
+.dark .fixed.inset-0.z-50.bg-slate-900\/40 > div {
+  background-color: #111c44 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .fixed.inset-0.z-50.bg-slate-900\/40 form {
+  background-color: #111c44 !important;
+}
+
+.dark .pt-4.border-t.border-slate-100.flex.justify-end.gap-3.bg-slate-50 {
+  background-color: #16223f !important;
+  border-color: #1e293b !important;
+}
+
+/* Sliding Document Drawer */
+.dark .fixed.inset-0.z-50.bg-slate-900\/40.flex.items-center.justify-end > div {
+  background-color: #111c44 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .fixed.inset-0.z-50.bg-slate-900\/40.flex.items-center.justify-end form {
+  background-color: #16223f !important;
+}
+
+/* Quick switches / Logins */
+.dark #login-card {
+  background-color: #111c44 !important;
+  border-color: #1e293b !important;
+}
+
+.dark #quick-logins button {
+  background-color: #16223f !important;
+  border-color: #2c3a5e !important;
+  color: #cbd5e1 !important;
+}
+
+.dark #quick-logins button:hover {
+  background-color: #20315a !important;
+  border-color: #3b82f6 !important;
+}
+
+.dark #quick-logins button div {
+  color: #ffffff !important;
+}
+
+/* Reports elements */
+.dark #reports-fleet-kpis > div {
+  background-color: #111c44 !important;
+}
+
+.dark #reports-fleet-kpis > .bg-emerald-950 {
+  background-color: #064e3b !important; /* solid deep emerald */
+  border-color: #065f46 !important;
+}
+
+.dark #reports-charts > div {
+  background-color: #111c44 !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #16223f !important;
+}
+
+/* Compliance alerts warning banner */
+.dark #header-warning-badge {
+  background-color: #451a03 !important; /* dark amber background */
+  border-color: #78350f !important;
+  color: #fef3c7 !important;
+}
+
+.dark #header-warning-badge .bg-amber-600 {
+  background-color: #b45309 !important;
+}
